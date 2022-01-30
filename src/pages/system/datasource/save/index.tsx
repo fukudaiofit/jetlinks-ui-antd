@@ -58,7 +58,7 @@ const Save = (props: Props) => {
         },
       );
       setFieldState(
-        `*(shareConfig.url,shareConfig.username,shareConfig.password, button)`,
+        `*(shareConfig.url,shareConfig.username,shareConfig.password, shareConfig.schema, button)`,
         state => {
           state.visible = value === 'rdb';
           state.value = undefined;
@@ -101,7 +101,8 @@ const Save = (props: Props) => {
             title: '类型',
             'x-component': 'Select',
             'x-component-props': {
-              disabled: !!data.typeId
+              disabled: !!data.typeId,
+              showSearch:true
             },
             'x-mega-props': {
               span: 2,
@@ -186,6 +187,21 @@ const Save = (props: Props) => {
               {
                 required: true,
                 message: '密码必填',
+              },
+            ],
+            'x-component': 'Input',
+          },
+          'shareConfig.schema': {
+            title: 'schema',
+            'x-mega-props': {
+              span: 2,
+              labelCol: 6,
+            },
+            visible: false,
+            'x-rules': [
+              {
+                required: true,
+                message: 'schema必填',
               },
             ],
             'x-component': 'Input',

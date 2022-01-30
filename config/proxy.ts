@@ -8,8 +8,8 @@
 export default {
   dev: {
     '/jetlinks': {
-      // target: 'http://192.168.22.222:8844/',
-      // ws: 'ws://192.168.22.222:8844/',
+      // target: 'http://192.168.33.188:8844/',
+      // ws: 'ws://192.168.33.188:8844/',
       // target: 'http://water.zlkjhb.com:9000/jetlinks',
       // ws: 'http://water.zlkjhb.com:9000/jetlinks',
       // ws: 'ws://test.jetlinks.cn/jetlinks',

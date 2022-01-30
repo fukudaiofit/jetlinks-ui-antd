@@ -34,9 +34,10 @@ import { DeviceInstance } from './data.d';
 import Process from './Process';
 import Import from './operation/import';
 import Export from './operation/export';
-import numeral from 'numeral';
+import numeral, { value } from 'numeral';
 import { DeviceProduct } from '@/pages/device/product/data';
 import { getPageQuery } from '@/utils/utils';
+import { Item } from 'gg-editor';
 
 interface Props extends FormComponentProps {
   loading: boolean;
@@ -648,6 +649,8 @@ const DeviceInstancePage: React.FC<Props> = props => {
               <Col sm={7} xs={24}>
                 <Select
                   placeholder="选择产品"
+                  showSearch
+                  optionFilterProp='label'
                   allowClear
                   style={{ width: '70%', marginTop: 7 }}
                   value={product}
@@ -665,7 +668,7 @@ const DeviceInstancePage: React.FC<Props> = props => {
                   }}
                 >
                   {productList?.map(item => (
-                    <Select.Option key={item.id}>{item.name}</Select.Option>
+                    <Select.Option key={item.id} label={item.name}>{item.name}</Select.Option>
                   ))}
                 </Select>
               </Col>

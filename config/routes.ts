@@ -468,16 +468,6 @@ export const routes = [
             // authority: ['big-screen'],
             authority: ['big-screen', 'vis-configuration'],
             routes: [
-              // {
-              //     path: '/data-screen/big-screen',
-              //     name: '大屏管理',
-              //     icon: 'fund',
-              //     tenant: ['admin', 'big-screen'],
-              //     iconfont: 'icon-screen',
-              //     authority: ['big-screen'],
-              //     version: 'pro',
-              //     component: './data-screen/screen',
-              // }
               {
                 path: '/data-screen/category',
                 name: '分类管理',
@@ -512,6 +502,16 @@ export const routes = [
                 name: '组件管理',
                 icon: 'fund',
                 component: './data-screen/node',
+              },
+               {
+                  path: '/data-screen/project',
+                  name: '项目管理',
+                  icon: 'fund',
+                  // tenant: ['admin', 'big-screen'],
+                  iconfont: 'icon-screen',
+                  // authority: ['big-screen'],
+                  version: 'pro',
+                  component: './data-screen/project',
               }
             ],
           },
@@ -603,12 +603,14 @@ export const routes = [
             name: '视频网关',
             icon: 'youtube',
             version: 'pro',
+            tenant: ['admin', 'member'],
             authority: ['gb28181-gateway','media-gateway','media-channel','media-server','media-stream','gb28181-cascade'],
             routes: [
               {
                 path: '/media/basic',
                 name: '基本配置',
                 version: 'pro',
+                tenant: ['admin', 'member'],
                 authority: ['gb28181-gateway','media-gateway','media-server'],
                 icon: 'video-camera',
                 component: './media/basic',
@@ -633,6 +635,7 @@ export const routes = [
                 path: '/media/device',
                 name: '视频设备',
                 version: 'pro',
+                tenant: ['admin', 'member'],
                 authority: ['media-device'],
                 icon: 'gateway',
                 component: './media/device',
@@ -651,6 +654,7 @@ export const routes = [
                 name: '分屏展示',
                 version: 'pro',
                 authority: ['media-stream'],
+                tenant: ['admin', 'member'],
                 icon: 'appstore',
                 component: './media/reveal',
               },
@@ -658,6 +662,7 @@ export const routes = [
                 path: '/media/cascade',
                 name: '国标级联',
                 version: 'pro',
+                tenant: ['admin', 'member'],
                 authority: ['gb28181-cascade'],
                 icon: 'cloud-upload',
                 component: './media/cascade',

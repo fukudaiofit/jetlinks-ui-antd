@@ -330,12 +330,14 @@ const Save: React.FC<Props> = props => {
             initialValue: props.data?.provider,
           })(
             <Select
+              showSearch
+              optionFilterProp='label'
               onChange={(value: string) => {
                 setProvider(value);
               }}
             >
               {providerList.map((item: any) => (
-                <Select.Option key={item.id} value={item.id}>
+                <Select.Option key={item.id} value={item.id} label={item.name}>
                   {item.name}
                 </Select.Option>
               ))}
