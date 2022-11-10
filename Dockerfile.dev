@@ -3,10 +3,11 @@ FROM node:latest
 WORKDIR /usr/src/app/
 
 COPY package.json ./
-RUN npm install --silent --no-cache --registry=https://registry.npm.taobao.org
+#RUN npm install --silent --no-cache --registry=https://registry.npm.taobao.org
+RUN yarn
 
 COPY ./ ./
 
-RUN npm run fetch:blocks
+#RUN npm run fetch:blocks
 
 CMD ["npm", "run", "start"]
