@@ -9,7 +9,7 @@ _roadhog-api-doc
 # production
 /dist
 /.vscode
-
+/docker/dist
 # misc
 .DS_Store
 npm-debug.log*
@@ -38,3 +38,5 @@ screenshot
 .eslintcache
 
 build
+
+
