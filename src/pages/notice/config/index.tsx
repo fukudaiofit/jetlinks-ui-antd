@@ -1,44 +1,48 @@
 import { PageContainer } from '@ant-design/pro-layout';
-import { useRef, useState } from 'react';
 import type { ActionType, ProColumns } from '@jetlinks/pro-table';
 import {
   ArrowDownOutlined,
+  BarsOutlined,
   BugOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
   PlusOutlined,
+  SmallDashOutlined,
+  TeamOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons';
-import { Space, Upload } from 'antd';
+import { Dropdown, Menu, Space, Upload } from 'antd';
+import { useRef, useState } from 'react';
 import { useIntl } from '@@/plugin-locale/localeExports';
-import Service from '@/pages/notice/Template/service';
-import ConfigService from '@/pages/notice/Config/service';
-import SearchComponent from '@/components/SearchComponent';
-import { history, useLocation } from 'umi';
-import { getMenuPathByParams, MENUS_CODE } from '@/utils/menu';
-import { model } from '@formily/reactive';
-import Debug from './Debug';
-import Log from '@/pages/notice/Template/Log';
 import { downloadObject, onlyMessage } from '@/utils/util';
+import Service from '@/pages/notice/Config/service';
+import { observer } from '@formily/react';
+import SearchComponent from '@/components/SearchComponent';
+import { getMenuPathByParams, MENUS_CODE } from '@/utils/menu';
+import { history, useLocation } from 'umi';
+import { model } from '@formily/reactive';
 import moment from 'moment';
 import { PermissionButton, ProTableCard } from '@/components';
-import NoticeCard, { typeList } from '@/components/ProTableCard/CardItems/noticeTemplate';
-import { observer } from '@formily/react';
+import NoticeConfig from '@/components/ProTableCard/CardItems/noticeConfig';
+import Debug from '@/pages/notice/Config/Debug';
+import Log from '@/pages/notice/Config/Log';
+import { typeList } from '@/components/ProTableCard/CardItems/noticeTemplate';
 import usePermissions from '@/hooks/permission';
+import SyncUser from '@/pages/notice/Config/SyncUser';
 
-export const service = new Service('notifier/template');
+export const service = new Service('notifier/config');
 
-export const configService = new ConfigService('notifier/config');
 export const state = model<{
-  current?: TemplateItem;
+  current?: ConfigItem;
   debug?: boolean;
   log?: boolean;
+  syncUser: boolean;
 }>({
   debug: false,
   log: false,
+  syncUser: false,
 });
-
 const list = {
   weixin: {
     corpMessage: {
@@ -86,33 +90,33 @@ const list = {
   },
 };
 
-const Template = observer(() => {
+const Config = observer(() => {
   const intl = useIntl();
-  const location = useLocation<{ id: string }>();
-  const id = (location as any).query?.id;
   const actionRef = useRef<ActionType>();
+  const location = useLocation<{ id: string }>();
 
-  const { permission: templatePermission } = usePermissions('notice');
+  const { permission: configPermission } = usePermissions('notice');
+  const id = (location as any).query?.id;
 
-  const columns: ProColumns<TemplateItem>[] = [
+  const columns: ProColumns<ConfigItem>[] = [
     {
       dataIndex: 'name',
-      title: '模版名称',
+      title: '配置名称',
       ellipsis: true,
+      fixed: 'left',
+      width: '25%',
     },
     {
       dataIndex: 'provider',
       title: '通知方式',
-      renderText: (text, record) => {
-        return typeList[record?.type][record?.provider];
-      },
+      renderText: (text, record) => typeList[record.type][record.provider],
       valueType: 'select',
       valueEnum: list[id],
     },
     {
       dataIndex: 'description',
-      title: '说明',
       ellipsis: true,
+      title: '说明',
     },
     {
       title: intl.formatMessage({
@@ -120,17 +124,34 @@ const Template = observer(() => {
         defaultMessage: '操作',
       }),
       valueType: 'option',
-      align: 'left',
       width: 200,
+      fixed: 'right',
       render: (text, record) => [
+        (record.provider === 'dingTalkMessage' || record.provider === 'corpMessage') && (
+          <PermissionButton
+            tooltip={{
+              title: '同步用户',
+            }}
+            style={{ padding: 0 }}
+            type="link"
+            isPermission={configPermission.bind}
+            onClick={() => {
+              state.syncUser = true;
+              state.current = record;
+            }}
+          >
+            <TeamOutlined />
+          </PermissionButton>
+        ),
         <PermissionButton
           key="edit"
-          style={{ padding: 0 }}
           type="link"
-          isPermission={templatePermission.update}
-          onClick={() => {
+          style={{ padding: 0 }}
+          isPermission={configPermission.update}
+          onClick={async () => {
+            // setLoading(true);
             state.current = record;
-            history.push(getMenuPathByParams(MENUS_CODE['notice/Template/Detail'], id));
+            history.push(getMenuPathByParams(MENUS_CODE['notice/Config/Detail'], id));
           }}
           tooltip={{
             title: intl.formatMessage({
@@ -141,27 +162,31 @@ const Template = observer(() => {
         >
           <EditOutlined />
         </PermissionButton>,
-
         <PermissionButton
-          key="download"
-          style={{ padding: 0 }}
           type="link"
-          tooltip={{ title: '导出' }}
-          isPermission={templatePermission.export}
-          onClick={() => {
+          style={{ padding: 0 }}
+          isPermission={configPermission.export}
+          onClick={() =>
             downloadObject(
               record,
-              `${record.name}-${moment(new Date()).format('YYYY/MM/DD HH:mm:ss')}`,
-            );
+              `通知配置${record.name}-${moment(new Date()).format('YYYY/MM/DD HH:mm:ss')}`,
+            )
+          }
+          key="download"
+          tooltip={{
+            title: intl.formatMessage({
+              id: 'pages.data.option.download',
+              defaultMessage: '下载配置',
+            }),
           }}
         >
           <ArrowDownOutlined />
         </PermissionButton>,
         <PermissionButton
-          isPermission={templatePermission.debug}
-          key="debug"
-          style={{ padding: 0 }}
           type="link"
+          style={{ padding: 0 }}
+          isPermission={configPermission.debug}
+          key="debug"
           onClick={() => {
             state.debug = true;
             state.current = record;
@@ -176,26 +201,37 @@ const Template = observer(() => {
           <BugOutlined />
         </PermissionButton>,
         <PermissionButton
-          isPermission={templatePermission.log}
-          key="log"
-          style={{ padding: 0 }}
           type="link"
+          style={{ padding: 0 }}
+          isPermission={configPermission.log}
+          key="record"
           onClick={() => {
             state.log = true;
           }}
-          tooltip={{ title: '通知记录' }}
+          tooltip={{
+            title: intl.formatMessage({
+              id: 'pages.data.option.record',
+              defaultMessage: '通知记录',
+            }),
+          }}
         >
-          <UnorderedListOutlined />
+          <BarsOutlined />
         </PermissionButton>,
         <PermissionButton
           style={{ padding: 0 }}
           type="link"
           popConfirm={{
-            title: '确认删除?',
             onConfirm: async () => {
               await service.remove(record.id);
+              onlyMessage(
+                intl.formatMessage({
+                  id: 'pages.data.option.success',
+                  defaultMessage: '操作成功!',
+                }),
+              );
               actionRef.current?.reload();
             },
+            title: '确认删除',
           }}
           tooltip={{
             title: intl.formatMessage({
@@ -203,8 +239,7 @@ const Template = observer(() => {
               defaultMessage: '删除',
             }),
           }}
-          isPermission={templatePermission.delete}
-          key="delete"
+          key="remove"
         >
           <DeleteOutlined />
         </PermissionButton>,
@@ -223,22 +258,21 @@ const Template = observer(() => {
           setParam(data);
         }}
       />
-      <ProTableCard<TemplateItem>
-        actionRef={actionRef}
+      <ProTableCard<ConfigItem>
         rowKey="id"
+        actionRef={actionRef}
         search={false}
         params={param}
-        columns={columns}
         columnEmptyText={''}
-        gridColumns={[2, 2, 3]}
+        columns={columns}
+        scroll={{ x: 1366 }}
         headerTitle={
           <Space>
             <PermissionButton
-              isPermission={templatePermission.add}
+              isPermission={configPermission.add}
               onClick={() => {
                 state.current = undefined;
-                console.log(id);
-                history.push(getMenuPathByParams(MENUS_CODE['notice/Template/Detail'], id));
+                history.push(getMenuPathByParams(MENUS_CODE['notice/Config/Detail'], id));
               }}
               key="button"
               icon={<PlusOutlined />}
@@ -250,9 +284,8 @@ const Template = observer(() => {
               })}
             </PermissionButton>
             <Upload
-              disabled={!templatePermission.import}
+              disabled={!configPermission.import}
               key={'import'}
-              accept=".json"
               showUploadList={false}
               beforeUpload={(file) => {
                 const reader = new FileReader();
@@ -277,33 +310,35 @@ const Template = observer(() => {
                 return false;
               }}
             >
-              <PermissionButton isPermission={templatePermission.import} style={{ marginLeft: 12 }}>
+              <PermissionButton isPermission={configPermission.import} style={{ marginLeft: 12 }}>
                 导入
               </PermissionButton>
             </Upload>
-
             <PermissionButton
               popConfirm={{
                 title: '确认导出当前页数据？',
                 onConfirm: async () => {
                   const resp: any = await service.queryNoPagingPost({ ...param, paging: false });
                   if (resp.status === 200) {
-                    downloadObject(resp.result, '通知模版数据');
+                    downloadObject(resp.result, '通知配置数据');
                     onlyMessage('导出成功');
                   } else {
                     onlyMessage('导出错误', 'error');
                   }
                 },
               }}
-              isPermission={templatePermission.export}
+              isPermission={configPermission.export}
             >
               导出
             </PermissionButton>
           </Space>
         }
         gridColumn={3}
+        request={async (params) =>
+          service.query({ ...params, sorts: [{ name: 'createTime', order: 'desc' }] })
+        }
         cardRender={(record) => (
-          <NoticeCard
+          <NoticeConfig
             {...record}
             type={id}
             detail={
@@ -311,27 +346,43 @@ const Template = observer(() => {
                 style={{ fontSize: 18, padding: 8 }}
                 onClick={() => {
                   state.current = record;
-                  history.push(getMenuPathByParams(MENUS_CODE['notice/Template/Detail'], id));
+                  history.push(getMenuPathByParams(MENUS_CODE['notice/Config/Detail'], id));
                 }}
               >
                 <EyeOutlined />
               </div>
             }
             actions={[
+              // (record.provider === 'dingTalkMessage' || record.provider === 'corpMessage') && (
+              //   <PermissionButton
+              //     key="syncUser"
+              //     isPermission={true}
+              //     type="link"
+              //     onClick={() => {
+              //       state.syncUser = true;
+              //       state.current = record;
+              //     }}
+              //   >
+              //     <TeamOutlined />
+              //     同步用户
+              //   </PermissionButton>
+              // ),
               <PermissionButton
-                isPermission={templatePermission.update}
+                isPermission={configPermission.update}
+                type={'link'}
                 key="edit"
-                onClick={() => {
+                onClick={async () => {
                   state.current = record;
-                  history.push(getMenuPathByParams(MENUS_CODE['notice/Template/Detail'], id));
+                  history.push(getMenuPathByParams(MENUS_CODE['notice/Config/Detail'], id));
                 }}
               >
                 <EditOutlined />
                 编辑
               </PermissionButton>,
               <PermissionButton
-                isPermission={templatePermission.debug}
+                type={'link'}
                 key="debug"
+                isPermission={configPermission.debug}
                 onClick={() => {
                   state.debug = true;
                   state.current = record;
@@ -341,21 +392,9 @@ const Template = observer(() => {
                 调试
               </PermissionButton>,
               <PermissionButton
-                key="export"
-                isPermission={templatePermission.export}
-                onClick={() => {
-                  downloadObject(
-                    record,
-                    `${record.name}-${moment(new Date()).format('YYYY/MM/DD HH:mm:ss')}`,
-                  );
-                }}
-              >
-                <ArrowDownOutlined />
-                导出
-              </PermissionButton>,
-              <PermissionButton
-                isPermission={templatePermission.log}
+                type={'link'}
                 key="log"
+                isPermission={configPermission.log}
                 onClick={() => {
                   state.log = true;
                   state.current = record;
@@ -364,29 +403,77 @@ const Template = observer(() => {
                 <UnorderedListOutlined />
                 通知记录
               </PermissionButton>,
+              <Dropdown
+                key={'more'}
+                placement="bottom"
+                overlay={
+                  <Menu>
+                    <Menu.Item key="export">
+                      <PermissionButton
+                        type={'link'}
+                        key="export"
+                        isPermission={configPermission.export}
+                        onClick={() =>
+                          downloadObject(
+                            record,
+                            `通知配置${record.name}-${moment(new Date()).format(
+                              'YYYY/MM/DD HH:mm:ss',
+                            )}`,
+                          )
+                        }
+                      >
+                        <ArrowDownOutlined />
+                        导出
+                      </PermissionButton>
+                      ,
+                    </Menu.Item>
+                    {(record.provider === 'dingTalkMessage' ||
+                      record.provider === 'corpMessage') && (
+                      <Menu.Item key="syncUser">
+                        <PermissionButton
+                          key="syncUser"
+                          isPermission={configPermission.bind}
+                          type="link"
+                          onClick={() => {
+                            state.syncUser = true;
+                            state.current = record;
+                          }}
+                        >
+                          <TeamOutlined />
+                          同步用户
+                        </PermissionButton>
+                      </Menu.Item>
+                    )}
+                  </Menu>
+                }
+              >
+                <PermissionButton type={'link'} isPermission={true} key="other">
+                  <SmallDashOutlined />
+                  其他
+                </PermissionButton>
+              </Dropdown>,
               <PermissionButton
+                key="delete"
+                isPermission={configPermission.delete}
                 popConfirm={{
-                  title: '确认删除?',
+                  title: '确认删除？',
                   onConfirm: async () => {
                     await service.remove(record.id);
                     actionRef.current?.reset?.();
                   },
                 }}
-                isPermission={templatePermission.delete}
-                key="delete"
+                type={'link'}
               >
                 <DeleteOutlined />
               </PermissionButton>,
             ]}
           />
         )}
-        request={async (params) =>
-          service.query({ ...params, sorts: [{ name: 'createTime', order: 'desc' }] })
-        }
       />
       <Debug />
       {state.log && <Log />}
+      {state.syncUser && <SyncUser />}
     </PageContainer>
   );
 });
-export default Template;
+export default Config;
